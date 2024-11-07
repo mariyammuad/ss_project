@@ -16,8 +16,10 @@
 
 // module.exports = { connectDB, client };
 
+require('dotenv').config(); // Load environment variables from .env file
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://mariyam_muad:<db_password>@cluster0.wg6di.mongodb.net/secure_sys?retryWrites=true&w=majority&appName=Cluster0";
+
+const uri = process.env.MONGODB_URI; // Use the environment variable
 
 // Create a MongoClient instance and connect to the Atlas cluster
 const client = new MongoClient(uri, {
@@ -25,15 +27,13 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function connectToDatabase() {
   try {
-    if (!client.isConnected) {
-      await client.connect();
-      console.log("Connected to MongoDB Atlas!");
-    }
+    await client.connect(); // Directly connect without checking isConnected
+    console.log("Connected to MongoDB Atlas!");
   } catch (error) {
     console.error("Failed to connect to MongoDB Atlas:", error);
     throw error;

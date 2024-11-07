@@ -1,19 +1,25 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { client } = require('./db');
-const config = require('./config');
 const cors = require('cors');
+const { client, connectToDatabase } = require('./db'); // Import MongoDB connection
+const config = require('./config');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Connect to MongoDB Atlas before handling requests
+connectToDatabase().catch((error) => {
+  console.error("MongoDB connection error:", error);
+  process.exit(1); // Exit the application if the database connection fails
+});
+
 // Register route
 app.post('/api/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
-        const db = client.db();
+        const db = client.db("secure_sys");
 
         // Check if username or email already exists
         const existingUser = await db.collection('users').findOne({ username });
@@ -43,7 +49,7 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password, role } = req.body;
-        const db = client.db();
+        const db = client.db("secure_sys");
         const user = await db.collection('users').findOne({ username });
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
