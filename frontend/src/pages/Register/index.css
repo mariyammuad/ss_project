@@ -1,0 +1,61 @@
+body {
+  background-color: #d5b3f7;
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.auth-card {
+  background-color: #f6eaff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+}
+
+h2 {
+  color: #6c34a0;
+  font-weight: bold;
+}
+
+.auth-section {
+  margin-top: 20px;
+}
+
+.auth-section h4 {
+  color: #a35dbb;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.btn-primary {
+  background-color: #6c34a0;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #5a2c86;
+}
+
+.form-control::placeholder {
+  color: #a3a3a3;
+  font-size: 14px;
+}
+
+.register-btn {
+  width: 100%;
+  font-weight: bold;
+}
+
+.mr-2 {
+  margin-right: 10px; /* Space between buttons */
+}
