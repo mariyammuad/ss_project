@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Register = ({ onLogin }) => {
   const [showPopup, setShowPopup] = useState(false);
@@ -12,9 +13,10 @@ const Register = ({ onLogin }) => {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [role, setRole] = useState(null);
-  
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+
+  const navigate = useNavigate();
 
   const validatePassword = (password) => {
     return (
@@ -55,11 +57,10 @@ const Register = ({ onLogin }) => {
         password,
       });
 
-      console.log(response);
-
       if (response.status === 200 || response.status === 201) {
         setShowPopup(true);
         setTimeout(() => setShowPopup(false), 5000);
+        alert("Registration successful! Please check your email for the verification link.");
       } else {
         alert('Unexpected response code: ' + response.status);
       }
@@ -70,6 +71,11 @@ const Register = ({ onLogin }) => {
   };
 
   const handleLogin = async (loginRole) => {
+    if (!loginUsername || !loginPassword) {
+      alert("Please enter both username and password.");
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost:5000/api/login', {
         username: loginUsername,
@@ -77,45 +83,37 @@ const Register = ({ onLogin }) => {
         role: loginRole,
       });
 
-      if (response.status === 200) {
-        const { token } = response.data;
+      // Handle successful login
+      console.log(response.data); // You can use this response to store the token or proceed with the logged-in user
 
-        localStorage.setItem('authToken', token);
+      // Redirect to another page or show success message
+      const { token } = response.data;
+      localStorage.setItem('authToken', token); // Store the token in localStorage
+      setRole(loginRole);
+      onLogin(loginRole); // Update the state with the role
+      console.log(`User ${loginUsername} logged in as ${loginRole}`);
+      navigate('/dashboard'); // Navigate to the dashboard after successful login
 
-        setRole(loginRole);
-
-        onLogin(loginRole);
-
-        console.log(`User ${loginUsername} logged in as ${loginRole}`);
-      } else {
-        alert("Invalid credentials. Please try again.");
-      }
     } catch (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Please try again.");
+      console.error(error);
+      alert("Invalid credentials or server error.");
     }
   };
 
   const handleAdminLogin = async () => {
-    if (!loginUsername || !loginPassword) {
-      alert("Please enter both username and password.");
-      return;
-    }
     await handleLogin("admin");
   };
 
   const handleUserLogin = async () => {
-    if (!loginUsername || !loginPassword) {
-      alert("Please enter both username and password.");
-      return;
-    }
     await handleLogin("user");
   };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     setRole(null);
-    console.log(`User ${loginUsername} logged out`);
+    setLoginUsername('');
+    setLoginPassword('');
+    console.log(`User logged out`);
   };
 
   const checkAuthorization = (requiredRole) => {
@@ -202,41 +200,35 @@ const Register = ({ onLogin }) => {
             </form>
             {showPopup && (
               <div className="alert alert-success mt-3" role="alert">
-                Successfully Registered!
+                Registration Successful!
               </div>
             )}
           </div>
 
-          <div className="auth-section">
+          <div className="login-section">
             <h4>Login</h4>
-            <form>
-              <div className="form-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Username"
-                  value={loginUsername}
-                  onChange={(e) => setLoginUsername(e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                />
-              </div>
-            </form>
-            <div className="d-flex mt-3">
-              <button onClick={handleAdminLogin} className="btn btn-primary flex-grow-1 mr-2">
-                Log in as Admin
-              </button>
-              <button onClick={handleUserLogin} className="btn btn-primary flex-grow-1">
-                Log in as User
-              </button>
+            <div className="form-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Username"
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
+                required
+              />
             </div>
+            <div className="form-group">
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button onClick={handleAdminLogin} className="btn btn-primary mt-2">Login as Admin</button>
+            <button onClick={handleUserLogin} className="btn btn-secondary mt-2">Login as User</button>
           </div>
         </div>
       )}
