@@ -5,25 +5,19 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 require('dotenv').config();
+const axios = require('axios');
+const mongoose = require('mongoose');
+const Admin = require('./models/User'); // Assuming you have this model defined
+const Log = require('./models/Log'); // Assuming you log activities
+
 const app = express();
-const bodyParser = require('body-parser');
 
-app.use(cors());
-app.use(express.json()); // To parse JSON data
+// MongoDB Connection
+mongoose.connect('mongodb://localhost:27017/secure_sys')
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.log('MongoDB connection error:', err));
 
-// MongoDB URI
-const uri = "mongodb+srv://mariyam_muad:H8Qm6wueveWOb08R@cluster0.wg6di.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-// Create MongoDB client
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
-
-// Set up email transporter using Nodemailer
+// Nodemailer setup for sending verification emails
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -32,140 +26,210 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Helper function to send email verification link
-const sendVerificationEmail = (email, token) => {
-  const verificationUrl = `http://localhost:5000/api/verify-email?token=${token}`;
-  const mailOptions = {
-    from: process.env.MAIL_USER,
-    to: email,
-    subject: 'Email Verification',
-    text: `Please verify your email by clicking on the following link: ${verificationUrl}`,
-  };
+app.use(cors());
+app.use(express.json());
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('Verification email sent: ' + info.response);
-    }
+// Middleware for JWT Authentication
+const authenticateToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "Access denied, no token provided." });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: "Invalid or expired token." });
+    req.user = user;
+    next();
   });
 };
 
-// User registration endpoint (with email verification)
+// Middleware for Role-Based Authorization
+const authorizeRole = (requiredRole) => {
+  return (req, res, next) => {
+    if (req.user && req.user.role === requiredRole) {
+      next();
+    } else {
+      res.status(403).json({ message: "Access denied: Unauthorized" });
+    }
+  };
+};
+
+// Helper function to hash passwords
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  const pepper = process.env.PEPPER;
+  return bcrypt.hash(password + pepper, salt);
+};
+
+// Helper function to verify passwords
+const verifyPassword = async (password, hashedPassword) => {
+  const pepper = process.env.PEPPER;
+  return bcrypt.compare(password + pepper, hashedPassword);
+};
+
+// Helper function for reCAPTCHA verification
+const verifyRecaptcha = async (recaptchaResponse) => {
+  try {
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify`, null, {
+      params: {
+        secret: secretKey,
+        response: recaptchaResponse,
+      },
+    });
+
+    const data = response.data;
+    return data.success;
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    return false;
+  }
+};
+
+// Admin login endpoint
+app.post('/api/login', async (req, res) => {
+  console.log("Login request received. Request body:", req.body);
+
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    console.log("Missing email or password.");
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+
+  try {
+    // Admin login check
+    console.log("Checking admin credentials...");
+    const adminCheck = await verifyAdmin(email, password);
+    if (adminCheck?.isValid) {
+      console.log("Admin login successful.");
+      return res.status(200).json({ message: 'Admin login successful', token: adminCheck.token });
+    }
+
+    // User login process
+    console.log("Checking user account...");
+    const user = await mongoose.connection.collection('users').findOne({ email });
+    if (!user) {
+      console.log("User not found.");
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    if (!user.isEmailVerified) {
+      console.log("Email not verified.");
+      return res.status(400).json({ message: 'Please verify your email' });
+    }
+
+    console.log("Validating password...");
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) {
+      console.log("Invalid password.");
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+
+    console.log("Generating token...");
+    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    console.log("Login successful.");
+    return res.status(200).json({ message: 'Login successful', token });
+  } catch (error) {
+    console.error("Error during login:", error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// User Registration
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    // Generate a JWT token for email verification
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // Verify reCAPTCHA
+    const isRecaptchaValid = await verifyRecaptcha(req.body.recaptchaResponse);
+    if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
 
-    // Check if the user already exists in the MongoDB collection
-    await client.connect();
-    const database = client.db('secure_sys');
-    const usersCollection = database.collection('users');
-    const existingUser = await usersCollection.findOne({ email });
-
-    if (existingUser) {
+    // Check if user already exists
+    const userExists = await mongoose.connection.collection('users').findOne({ email });
+    if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash the password before storing it
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password and create user
+    const hashedPassword = await hashPassword(password);
+    const newUser = {
+      username,
+      email,
+      password: hashedPassword,
+      role: 'user',
+      isEmailVerified: false,
+    };
 
-    // Temporarily store user data in memory until email verification is complete
-    const userData = { username, email, password: hashedPassword, isEmailVerified: false, verificationToken: token };
-
-    // Send email verification
-    sendVerificationEmail(email, token);
-
-    // Store user data temporarily in the database with email unverified status
-    await usersCollection.insertOne(userData);
-
-    res.status(200).json({ message: 'Registration successful! Please check your email for the verification link.' });
+    await mongoose.connection.collection('users').insertOne(newUser);
+    res.status(200).json({ message: 'Registration successful! Please check your email for verification.' });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Registration failed. Please try again.' });
   }
 });
 
-// Email verification endpoint
-app.get('/api/verify-email', async (req, res) => {
-  const { token } = req.query;
+// User Login
+app.post('/api/user/login', async (req, res) => {
+  const { username, password, recaptchaResponse } = req.body;
 
   try {
-    // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { email } = decoded;
+    // Verify reCAPTCHA
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
+    if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
 
-    // Check if the email exists in the users collection
-    await client.connect();
-    const database = client.db('secure_sys');
-    const usersCollection = database.collection('users');
-    const user = await usersCollection.findOne({ email });
+    // Find user
+    const user = await mongoose.connection.collection('users').findOne({ username });
+    if (!user) return res.status(400).json({ message: 'Invalid username or password' });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    // Verify password
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) return res.status(400).json({ message: 'Invalid username or password' });
 
-    // Update the user's email verification status
-    await usersCollection.updateOne(
-      { email },
-      { $set: { isEmailVerified: true } }
+    // Generate JWT token
+    const token = jwt.sign(
+      { email: user.email, username: user.username, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
     );
 
-    res.status(200).json({ message: 'Email successfully verified' });
-
-  } catch (error) {
-    console.error(error);
-    res.status(400).json({ message: 'Invalid or expired token' });
-  }
-});
-
-// User login endpoint (No email verification needed, just username and password)
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-
-  try {
-    await client.connect();
-    const database = client.db('secure_sys');
-    const usersCollection = database.collection('users');
-    const user = await usersCollection.findOne({ username });
-
-    if (!user) {
-      return res.status(400).json({ message: 'User not found' });
-    }
-
-    // Validate password with bcrypt
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // If password is correct, generate a JWT token for the session
-    const userToken = jwt.sign({ email: user.email, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    // Send the token in the response
-    res.status(200).json({ message: 'Login successful', token: userToken });
-
+    res.status(200).json({ message: 'Login successful', token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Start server and connect to MongoDB
-async function connectToDatabase() {
-  try {
-    // Connect to the MongoDB server
-    await client.connect();
-    console.log("Connected to MongoDB!");
-    app.listen(5000, () => console.log("Server running on port 5000"));
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
-  }
-}
+// Protected User Dashboard
+app.get('/api/user/dashboard', authenticateToken, authorizeRole('user'), (req, res) => {
+  res.status(200).json({ message: `Welcome ${req.user.username}! This is your user dashboard.` });
+});
 
-// Call the function to initialize the server
-connectToDatabase().catch(console.dir);
+// Protected Admin Dashboard
+app.get('/api/admin/dashboard', authenticateToken, authorizeRole('admin'), (req, res) => {
+  res.status(200).json({ message: `Welcome ${req.user.username}! This is your admin dashboard.` });
+});
+
+// Helper function to send login email
+const sendLoginEmail = (toEmail, subject, text) => {
+  const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: toEmail,
+    subject: subject,
+    text: text,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Error sending email:', error);
+    } else {
+      console.log('Email sent: ' + info.response);
+    }
+  });
+};
+
+// Start Server
+const PORT = process.env.PORT || 5002;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

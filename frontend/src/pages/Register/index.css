@@ -1,5 +1,5 @@
 body {
-  background-color: #d5b3f7;
+  background: linear-gradient(135deg, #8e44ad, #d5b3f7);
 }
 
 .auth-container {
@@ -11,11 +11,11 @@ body {
 
 .auth-card {
   background-color: #f6eaff;
-  padding: 30px;
+  padding: 40px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 300px;
 }
 
 h2 {
@@ -52,10 +52,11 @@ h2 {
 }
 
 .register-btn {
-  width: 100%;
+  width: 200%;
   font-weight: bold;
 }
 
 .mr-2 {
   margin-right: 10px; /* Space between buttons */
 }
+

@@ -1,0 +1,99 @@
+/* Container for the login page */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #8e44ad, #d5b3f7);
+  padding: 20px;
+}
+
+/* Card styling for the login form */
+.auth-card {
+  background-color: #f6eaff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 50px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  min-height: 400px;
+}
+
+/* Header styling */
+.auth-card h4 {
+  font-size: 28px;
+  font-weight: bold; /* Set font weight to bold */
+  color: #6c34a0; /* Set text color */
+  margin-bottom: 20px;
+}
+
+
+/* Form group styling */
+.form-group {
+  margin-bottom: 15px;
+}
+
+/* Input field styling */
+.form-control {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+}
+
+/* ReCAPTCHA container */
+.recaptcha-container {
+  margin-bottom: 1rem;
+}
+
+/* Login button styling */
+.login-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 4px;
+  background-color: #6c34a0;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border: none;
+}
+
+.login-btn:hover {
+  background-color: #5a2c86;
+}
+
+/* Message styles */
+.success-message {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.error-message {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 20px;
+  }
+
+  .auth-card h4 {
+    font-size: 20px;
+  }
+
+  .login-btn {
+    font-size: 14px;
+  }
+}

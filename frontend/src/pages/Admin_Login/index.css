@@ -1,0 +1,89 @@
+/* Container for the admin login page with a background image */
+.admin-background-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #8e44ad, #d5b3f7);
+  padding: 20px;
+}
+
+/* Auth Card styling for Admin Login */
+.admin-login-container {
+  background-color: #f6eaff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 50px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  min-height: 400px;
+}
+
+/* Header styling inside the auth card */
+.admin-form-heading {
+  font-size: 30px;
+  font-weight: bold;
+  color: #6c34a0;
+  margin-bottom: 20px;
+}
+
+/* Form group styling */
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+/* Input field styling */
+.admin-form-control {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.admin-form-control:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+/* Button styling using Bootstrap's btn-outline-light class */
+.admin-btn-outline-light {
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+  border-radius: 4px;
+  background-color:  #6c34a0;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border: none;
+}
+
+.admin-btn-outline-light:hover {
+  background-color: #5a2c86;
+}
+
+/* Message styles for success and error messages */
+.admin-message {
+  color: #f39c12;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .admin-login-container {
+    padding: 20px;
+  }
+
+  .admin-form-heading {
+    font-size: 24px;
+  }
+
+  .admin-btn-outline-light {
+    font-size: 16px;
+  }
+}

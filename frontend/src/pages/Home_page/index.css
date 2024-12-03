@@ -1,0 +1,97 @@
+/* Full height and background */
+.homepage-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #8e44ad, #d5b3f7); /* Smooth gradient */
+    color: #fff;
+    padding: 0 20px;
+  }
+  
+  /* Text section styling */
+  .text-section {
+    background: #f6eaff; /* Slightly transparent background */
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    box-shadow: 0px 20px 40px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 600px; /* Prevents it from becoming too wide */
+    margin: 0 auto;
+  }
+  
+  /* Ensure text color changes */
+  .text-section h1 {
+    font-weight: 700;
+    color: #512778!important; /* Force text color change */
+    font-size: 3rem; /* Larger text for the heading */
+    margin-bottom: 20px;
+  }
+  
+  .text-section p {
+    font-size: 1.25rem;
+    color: #34495e;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+  
+  /* Button styling */
+  .button-group .btn {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .btn-primary {
+    background-color: #6c34a0;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background-color: #5a2c86;
+    transform: translateY(-5px); /* Lift effect */
+  }
+  
+  .btn-outline-dark {
+    color: #34495e;
+    border: 2px solid #34495e;
+    width: 100%;
+  }
+  
+  .btn-outline-dark:hover {
+    background-color: #5a2c86;
+    color: #fff;
+    transform: translateY(-5px); /* Lift effect */
+  }
+  
+  /* Styling for the image */
+  .homepage-image {
+    max-width: 80%;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .homepage-image:hover {
+    transform: scale(1.1); /* Slight zoom effect */
+    box-shadow: 0px 25px 50px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Media Query for responsiveness */
+  @media (max-width: 767px) {
+    .homepage-container {
+      padding: 0 10px;
+    }
+  
+    .text-section {
+      padding: 2rem;
+      max-width: 100%;
+    }
+  
+    .homepage-image {
+      max-width: 90%;
+    }
+  }
+  
