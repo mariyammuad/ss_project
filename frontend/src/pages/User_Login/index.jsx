@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
 import './index.css'; // Import the CSS file
 
 const Login = ({ onLogin }) => {
@@ -10,7 +10,7 @@ const Login = ({ onLogin }) => {
   const [loginMessage, setLoginMessage] = useState("");
   const [recaptchaValue, setRecaptchaValue] = useState(null);
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Initialize navigate
 
   const handleLogin = async () => {
     if (!loginUsername || !loginPassword) {
@@ -24,28 +24,29 @@ const Login = ({ onLogin }) => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5002/api/user/login', {
+      const response = await axios.post('http://localhost:5003/api/user/login', {
         username: loginUsername,
         password: loginPassword,
         recaptchaResponse: recaptchaValue,
       });
 
       const { token } = response.data;
-      
+
       if (token) {
         localStorage.setItem('authToken', token); // Store the token in localStorage
         setLoginMessage("Successfully Logged In");
         onLogin(); // Update the login state in the parent component
 
         // Log message to confirm successful login
-        console.log("Login successful, redirecting to dashboard...");
+        console.log("Login successful");
 
-        // Redirect to dashboard after successful login
+        // Redirect to the dashboard after a 1.5-second delay
         setTimeout(() => {
-          navigate("/dashboard"); // Redirect to dashboard route
+          navigate("/User_dashboard"); // Redirect to dashboard route
         }, 1500); // Delay of 1.5 seconds
       } else {
         setLoginMessage("Failed to retrieve the token.");
+        console.log("failed");
       }
     } catch (error) {
       const message = error.response?.data?.message || "Login failed. Please try again.";
@@ -91,9 +92,7 @@ const Login = ({ onLogin }) => {
         <button onClick={handleLogin} className="login-btn mt-2">Login</button>
         {loginMessage && (
           <p
-            className={`mt-2 ${
-              loginMessage === "Successfully Logged In" ? "success-message" : "error-message"
-            }`}
+            className={`mt-2 ${loginMessage === "Successfully Logged In" ? "success-message" : "error-message"}`}
           >
             {loginMessage}
           </p>

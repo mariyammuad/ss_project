@@ -1,30 +1,41 @@
-// const bcrypt = require('bcrypt');
-// const mongoose = require('mongoose');
-// const connectDB = require('./db');
-// require('dotenv').config();
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import Admin from './models/Admin.js'; // Include .js extension
 
-// const createAdmin = async () => {
-//   const saltRounds = 10;
-//   const plaintextPassword = "Mariyam#2002"; // Change this
-//   const username = "mariyam"; // Change this
+// Load environment variables from .env file
+dotenv.config();
 
-//   try {
-//     await connectDB();
-//     const hash = await bcrypt.hash(plaintextPassword, saltRounds);
+const createAdmin = async () => {
+  try {
+    // Connect to your MongoDB database using the URI from the environment variable
+    const uri = process.env.MONGODB_URI;
 
-//     const admin = {
-//       username,
-//       password: hash,
-//       role: "admin",
-//     };
+    if (!uri) {
+      throw new Error('MONGODB_URI is not defined in the .env file');
+    }
 
-//     const result = await mongoose.connection.collection('users').insertOne(admin);
-//     console.log('Admin created:', result);
-//   } catch (error) {
-//     console.error('Error creating admin:', error);
-//   } finally {
-//     mongoose.connection.close();
-//   }
-// };
+    await mongoose.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
 
-// createAdmin();
+    console.log('Database connected successfully');
+
+    // Create the admin
+    const newAdmin = new Admin({
+      email: 'mariyammuad@gmail.com',
+      password: 'MLJWRyuOJiH8',
+    });
+
+    await newAdmin.save();
+    console.log('Admin created successfully:', newAdmin);
+  } catch (error) {
+    console.error('Error creating admin:', error);
+  } finally {
+    // Disconnect the database
+    await mongoose.disconnect();
+    console.log('Database disconnected');
+  }
+};
+
+createAdmin();

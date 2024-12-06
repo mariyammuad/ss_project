@@ -1,64 +1,97 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './index.css';  // Import custom CSS
+import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
+import './index.css';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    
+    // Fetch the token from localStorage
+    const token = localStorage.getItem('token');
     if (!token) {
-      // If no token, redirect to login page
-      navigate('/login');
-    } else {
-      // Fetch logs from the server
-      axios.get('http://localhost:5002/api/user/logs', {
+      // If no token is found, redirect to login page
+      navigate('/admin-login');
+      return;
+    }
+
+    // Validate the token
+    try {
+      const decodedToken = jwtDecode(token); // Decode the token payload
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      if (decodedToken.exp < currentTime) {
+        // Token has expired, remove it and redirect to login page
+        console.warn('Token expired');
+        localStorage.removeItem('token');
+        navigate('/admin-login');
+        return;
+      }
+    } catch (error) {
+      // Token is invalid or decoding failed, remove it and redirect to login page
+      console.error('Invalid token:', error);
+      localStorage.removeItem('token');
+      navigate('/admin-login');
+      return;
+    }
+
+    // Fetch logs if the token is valid
+    axios
+      .get('http://localhost:5003/api/user/logs', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
-      .then(response => setLogs(response.data))
-      .catch(err => {
+      .then((response) => {
+        setLogs(response.data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
         console.error(err);
-        navigate('/login'); // Redirect to login if token is invalid or error occurs
+        navigate('/admin-login');
       });
-    }
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    navigate('/login');
+    // Remove the token from localStorage when logging out
+    localStorage.removeItem('token');
+    navigate('/admin-login');
   };
 
   return (
-    <div className="dashboard container mt-5">
-      <div className="header d-flex justify-content-between align-items-center">
-        <h1>Admin Dashboard</h1>
-        <button className="btn btn-danger" onClick={handleLogout}>Logout</button>
-      </div>
-      
-      <h2 className="mt-4">User Action Logs</h2>
-      <table className="table table-striped table-bordered mt-3">
-        <thead>
-          <tr>
-            <th>User ID</th>
-            <th>Action</th>
-            <th>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map(log => (
-            <tr key={log._id}>
-              <td>{log.userId}</td>
-              <td>{log.action}</td>
-              <td>{new Date(log.timestamp).toLocaleString()}</td>
+    <div>
+      <h1>Admin Dashboard</h1>
+      <button onClick={handleLogout}>Logout</button>
+      {isLoading ? (
+        <p>Loading logs...</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Action</th>
+              <th>Timestamp</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {logs.length > 0 ? (
+              logs.map((log) => (
+                <tr key={log._id}>
+                  <td>{log.userId}</td>
+                  <td>{log.action}</td>
+                  <td>{new Date(log.timestamp).toLocaleString()}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="3">No logs available</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };

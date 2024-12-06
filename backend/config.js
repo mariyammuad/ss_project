@@ -34,4 +34,4 @@ const config = {
     clientUrl: process.env.CLIENT_URL || 'http://localhost:3000', // Default client URL
 };
 
-module.exports = config;
+export default config;

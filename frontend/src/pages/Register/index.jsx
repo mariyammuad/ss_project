@@ -17,20 +17,6 @@ const Register = () => {
 
   const navigate = useNavigate();
 
-  const validatePassword = (password) => {
-    return (
-      password.length > 6 &&
-      /[A-Z]/.test(password) &&
-      /[a-z]/.test(password) &&
-      /\d/.test(password)
-    );
-  };
-
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
@@ -55,7 +41,7 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5002/api/register', {
+      const response = await axios.post('http://localhost:5003/api/register', {
         username,
         email,
         password,
@@ -64,7 +50,12 @@ const Register = () => {
 
       if (response.status === 200 || response.status === 201) {
         setShowPopup(true);
-        setTimeout(() => setShowPopup(false), 5002);
+
+        setTimeout(() =>{ 
+        setShowPopup(false);
+        navigate('/login');
+      }, 7000); //7 seconds delay
+      
         alert("Registration successful! Please check your email for the verification link.");
 
         // Clear form fields after successful registration
@@ -74,19 +65,27 @@ const Register = () => {
         setConfirmPassword("");
         setRecaptchaResponse(null);
 
-        // Navigate to the login page
-        navigate('/login');
+        // Don't navigate to login page until email is verified
       } else {
         alert('Unexpected response code: ' + response.status);
       }
     } catch (error) {
       console.error("Registration error:", error);
-      // Adjust error handling to check for a custom error message
       const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
       alert(errorMessage);  // Show the error message from the server
     }
-};
+  };
 
+  // Validation functions
+  const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    return passwordRegex.test(password);
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    return emailRegex.test(email);
+  };
 
   const onRecaptchaChange = (value) => {
     setRecaptchaResponse(value);

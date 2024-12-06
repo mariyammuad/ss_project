@@ -1,21 +1,27 @@
-const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const nodemailer = require('nodemailer');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const cors = require('cors');
-require('dotenv').config();
-const axios = require('axios');
-const mongoose = require('mongoose');
-const Admin = require('./models/User'); // Assuming you have this model defined
-const Log = require('./models/Log'); // Assuming you log activities
+import express from 'express';
+import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import axios from 'axios';
+import Log from './models/Log.js';   // Assuming you log activities
+import adminRoutes from './routes/adminRoutes.js';
+import routes from './routes/index.js'; // Adjust path if needed
+import Admin from './models/Admin.js';  // Corrected to include .js extension
+
+dotenv.config();
 
 const app = express();
 
 // MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/secure_sys')
+mongoose.connect(process.env.MONGODB_URI, { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true 
+})
   .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.log('MongoDB connection error:', err));
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // Nodemailer setup for sending verification emails
 const transporter = nodemailer.createTransport({
@@ -26,8 +32,17 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Adjust this if your React app is running on a different port
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(express.json());
+
+// Add the admin routes middleware here
+app.use('/api/admin', adminRoutes);
+app.use('/api', routes);
 
 // Middleware for JWT Authentication
 const authenticateToken = (req, res, next) => {
@@ -65,93 +80,111 @@ const verifyPassword = async (password, hashedPassword) => {
   return bcrypt.compare(password + pepper, hashedPassword);
 };
 
-// Helper function for reCAPTCHA verification
-const verifyRecaptcha = async (recaptchaResponse) => {
+// Function to verify the reCAPTCHA token
+async function verifyRecaptcha(token) {
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY; // reCAPTCHA secret key from environment variable
   try {
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-    const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify`, null, {
-      params: {
-        secret: secretKey,
-        response: recaptchaResponse,
-      },
-    });
-
-    const data = response.data;
-    return data.success;
+    const response = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      {
+        params: {
+          secret: secretKey,
+          response: token,
+        },
+      }
+    );
+    return response.data.success;
   } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
-    return false;
+    console.error('Error during reCAPTCHA verification:', error);
+    return false;  // Return false in case of error
+  }
+}
+
+// Utility function to verify admin credentials
+const verifyAdmin = async (email, password) => {
+  try {
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return { isValid: false, message: 'Admin not found' };
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    if (!isPasswordValid) {
+      return { isValid: false, message: 'Invalid password' };
+    }
+
+    const token = jwt.sign(
+      { id: admin._id, email: admin.email, role: 'admin' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    return { isValid: true, token };
+  } catch (error) {
+    console.error('Error in verifyAdmin:', error);
+    throw error;
   }
 };
 
-// Admin login endpoint
-app.post('/api/login', async (req, res) => {
-  console.log("Login request received. Request body:", req.body);
-
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    console.log("Missing email or password.");
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
-
+// Route to fetch logs
+app.get('/api/user/logs', authenticateToken, async (req, res) => {
   try {
-    // Admin login check
-    console.log("Checking admin credentials...");
-    const adminCheck = await verifyAdmin(email, password);
-    if (adminCheck?.isValid) {
-      console.log("Admin login successful.");
-      return res.status(200).json({ message: 'Admin login successful', token: adminCheck.token });
-    }
-
-    // User login process
-    console.log("Checking user account...");
-    const user = await mongoose.connection.collection('users').findOne({ email });
-    if (!user) {
-      console.log("User not found.");
-      return res.status(400).json({ message: 'User not found' });
-    }
-
-    if (!user.isEmailVerified) {
-      console.log("Email not verified.");
-      return res.status(400).json({ message: 'Please verify your email' });
-    }
-
-    console.log("Validating password...");
-    const isPasswordValid = await verifyPassword(password, user.password);
-    if (!isPasswordValid) {
-      console.log("Invalid password.");
-      return res.status(400).json({ message: 'Invalid password' });
-    }
-
-    console.log("Generating token...");
-    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    console.log("Login successful.");
-    return res.status(200).json({ message: 'Login successful', token });
+    const logs = await Log.find().sort({ timestamp: -1 }); 
+    res.status(200).json(logs);
   } catch (error) {
-    console.error("Error during login:", error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching logs:', error);
+    res.status(500).json({ message: 'Error fetching logs', error });
   }
 });
 
-// User Registration
-app.post('/api/register', async (req, res) => {
-  const { username, email, password } = req.body;
+// Admin login endpoint
+app.post('/api/admin/login', async (req, res) => {
+  const { email, password, recaptchaResponse } = req.body;
+
+  if (!email || !password || !recaptchaResponse) {
+    return res.status(400).json({ message: 'Email, password, and reCAPTCHA are required' });
+  }
 
   try {
-    // Verify reCAPTCHA
-    const isRecaptchaValid = await verifyRecaptcha(req.body.recaptchaResponse);
-    if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({ message: 'Invalid reCAPTCHA' });
+    }
 
-    // Check if user already exists
+    const { isValid, token, message } = await verifyAdmin(email, password);
+    if (!isValid) {
+      return res.status(400).json({ message });
+    }
+
+    res.status(200).json({ message: 'Admin login successful', token });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// User registration endpoint
+app.post('/api/register', async (req, res) => {
+  const { username, email, password, recaptchaResponse } = req.body;
+
+  if (!username || !email || !password || !recaptchaResponse) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  try {
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({ message: 'Invalid reCAPTCHA' });
+    }
+
     const userExists = await mongoose.connection.collection('users').findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash password and create user
     const hashedPassword = await hashPassword(password);
+
     const newUser = {
       username,
       email,
@@ -161,75 +194,76 @@ app.post('/api/register', async (req, res) => {
     };
 
     await mongoose.connection.collection('users').insertOne(newUser);
-    res.status(200).json({ message: 'Registration successful! Please check your email for verification.' });
 
+    const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const verificationLink = `${process.env.SERVER_URL}/api/verify-email?token=${verificationToken}`;
+
+    await transporter.sendMail({
+      from: process.env.MAIL_USER,
+      to: email,
+      subject: 'Email Verification',
+      text: `Please verify your email by clicking on the following link: ${verificationLink}`,
+    });
+
+    res.status(200).json({ message: 'Registration successful! Please verify your email.' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Registration failed. Please try again.' });
+    console.error('Error during registration:', error);
+    res.status(500).json({ message: 'An error occurred. Please try again later.' });
   }
 });
 
-// User Login
+// Email verification endpoint
+app.get('/api/verify-email', async (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).send('Invalid or missing verification token');
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const email = decoded.email;
+
+    const result = await mongoose.connection.collection('users').updateOne(
+      { email },
+      { $set: { isEmailVerified: true } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(400).send('Email verification failed.');
+    }
+
+    res.status(200).send('Email verification successful! You can now log in.');
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(400).send('Invalid or expired verification token');
+  }
+});
+
+// User login endpoint
 app.post('/api/user/login', async (req, res) => {
   const { username, password, recaptchaResponse } = req.body;
 
   try {
-    // Verify reCAPTCHA
     const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
     if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
 
-    // Find user
     const user = await mongoose.connection.collection('users').findOne({ username });
-    if (!user) return res.status(400).json({ message: 'Invalid username or password' });
+    if (!user) return res.status(400).json({ message: 'User not found' });
 
-    // Verify password
     const isPasswordValid = await verifyPassword(password, user.password);
-    if (!isPasswordValid) return res.status(400).json({ message: 'Invalid username or password' });
+    if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { email: user.email, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
+    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.status(200).json({ message: 'Login successful', token });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('User login error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Protected User Dashboard
-app.get('/api/user/dashboard', authenticateToken, authorizeRole('user'), (req, res) => {
-  res.status(200).json({ message: `Welcome ${req.user.username}! This is your user dashboard.` });
-});
-
-// Protected Admin Dashboard
-app.get('/api/admin/dashboard', authenticateToken, authorizeRole('admin'), (req, res) => {
-  res.status(200).json({ message: `Welcome ${req.user.username}! This is your admin dashboard.` });
-});
-
-// Helper function to send login email
-const sendLoginEmail = (toEmail, subject, text) => {
-  const mailOptions = {
-    from: process.env.MAIL_USER,
-    to: toEmail,
-    subject: subject,
-    text: text,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error('Error sending email:', error);
-    } else {
-      console.log('Email sent: ' + info.response);
-    }
-  });
-};
-
-// Start Server
-const PORT = process.env.PORT || 5002;
+// Start server
+const PORT = process.env.PORT || 5003;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
