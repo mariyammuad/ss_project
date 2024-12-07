@@ -248,8 +248,8 @@ app.post('/api/user/login', async (req, res) => {
   const { username, password, recaptchaResponse } = req.body;
 
   try {
-    // const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
-    // if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
+    if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
 
     const user = await mongoose.connection.collection('users').findOne({ username });
     if (!user) return res.status(400).json({ message: 'User not found' });
