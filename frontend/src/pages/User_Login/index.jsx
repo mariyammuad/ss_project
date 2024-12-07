@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import ReCAPTCHA from 'react-google-recaptcha';
+// import ReCAPTCHA from 'react-google-recaptcha';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
 import './index.css'; // Import the CSS file
 
@@ -18,10 +18,10 @@ const Login = ({ onLogin }) => {
       return;
     }
 
-    if (!recaptchaValue) {
-      setLoginMessage("Please complete the reCAPTCHA.");
-      return;
-    }
+    // if (!recaptchaValue) {
+    //   setLoginMessage("Please complete the reCAPTCHA.");
+    //   return;
+    // }
 
     try {
       const response = await axios.post('http://localhost:5004/api/user/login', {
@@ -57,9 +57,9 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  const handleRecaptchaChange = (value) => {
-    setRecaptchaValue(value);
-  };
+  // const handleRecaptchaChange = (value) => {
+  //   setRecaptchaValue(value);
+  // };
 
   return (
     <div className="login-container">
@@ -86,13 +86,13 @@ const Login = ({ onLogin }) => {
           />
         </div>
       
-      {/* Add reCAPTCHA here */}
-      <div className="form-group">
+   
+      {/* <div className="form-group">
           <ReCAPTCHA
             sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY} // Your reCAPTCHA site key
             onChange={handleRecaptchaChange} // Store the reCAPTCHA value
           />
-        </div>
+        </div> */}
 
         <button onClick={handleLogin} className="login-btn mt-2">Login</button>
         {loginMessage && (
