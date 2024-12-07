@@ -41,7 +41,7 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('https://ss-project-frontend.vercel.app/', {
+      const response = await axios.post('www.mariyammuad.me', {
         username,
         email,
         password,

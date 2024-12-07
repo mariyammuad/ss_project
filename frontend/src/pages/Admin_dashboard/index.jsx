@@ -39,7 +39,7 @@ const Dashboard = () => {
 
     // Fetch logs if the token is valid
     axios
-      .get('https://ss-project-frontend.vercel.app/', {
+      .get('www.mariyammuad.me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

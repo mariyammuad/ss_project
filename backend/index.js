@@ -33,7 +33,7 @@ const transporter = nodemailer.createTransport({
 });
 
 app.use(cors({
-  origin: 'https://ss-project-frontend.vercel.app/', // Adjust this if your React app is running on a different port
+  origin: 'www.mariyammuad.me', // Adjust this if your React app is running on a different port
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
