@@ -8,6 +8,8 @@ const Dashboard = () => {
   const handleLogout = () => {
     // Remove the token from localStorage to log out
     localStorage.removeItem('authToken');
+    console.log("User logged out."); // Debugging log
+    localStorage.removeItem('authToken');
     // Redirect to login page
     navigate('/login');
   };

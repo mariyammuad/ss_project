@@ -39,7 +39,7 @@ const Dashboard = () => {
 
     // Fetch logs if the token is valid
     axios
-      .get('http://localhost:5003/api/user/logs', {
+      .get('http://localhost:5004/api/user/logs', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

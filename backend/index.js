@@ -127,16 +127,6 @@ const verifyAdmin = async (email, password) => {
   }
 };
 
-// Route to fetch logs
-app.get('/api/user/logs', authenticateToken, async (req, res) => {
-  try {
-    const logs = await Log.find().sort({ timestamp: -1 }); 
-    res.status(200).json(logs);
-  } catch (error) {
-    console.error('Error fetching logs:', error);
-    res.status(500).json({ message: 'Error fetching logs', error });
-  }
-});
 
 // Admin login endpoint
 app.post('/api/admin/login', async (req, res) => {
@@ -240,13 +230,26 @@ app.get('/api/verify-email', async (req, res) => {
   }
 });
 
+// Function to log user actions
+const logUserAction = (userId, action) => {
+  const log = new Log({
+    userId: userId,
+    action: action,
+    timestamp: new Date(),
+  });
+
+  log.save()
+    .then(() => console.log("Log saved"))
+    .catch(err => console.error("Error saving log:", err));
+};
+
 // User login endpoint
 app.post('/api/user/login', async (req, res) => {
   const { username, password, recaptchaResponse } = req.body;
 
   try {
-    const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
-    if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
+    // const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
+    // if (!isRecaptchaValid) return res.status(400).json({ message: 'Invalid reCAPTCHA' });
 
     const user = await mongoose.connection.collection('users').findOne({ username });
     if (!user) return res.status(400).json({ message: 'User not found' });
@@ -254,7 +257,13 @@ app.post('/api/user/login', async (req, res) => {
     const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
 
+    // Generate JWT token
     const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Log the login action
+    logUserAction(user._id, 'User logged in');  // Log the login action
+
+    // Send response
     res.status(200).json({ message: 'Login successful', token });
   } catch (error) {
     console.error('User login error:', error);
@@ -262,8 +271,19 @@ app.post('/api/user/login', async (req, res) => {
   }
 });
 
+// Route to fetch logs (only accessible for authenticated users)
+app.get('/api/user/logs', authenticateToken, async (req, res) => {
+  try {
+    const logs = await Log.find().sort({ timestamp: -1 });  // Fetch logs and sort by most recent
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    res.status(500).json({ message: 'Error fetching logs', error });
+  }
+});
+
 // Start server
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 5004;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

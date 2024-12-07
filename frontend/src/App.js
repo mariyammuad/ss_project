@@ -96,6 +96,7 @@ function App() {
   const [userRole, setUserRole] = useState(null);
 
   const handleLogin = (role) => {
+    console.log("User role set to:", role); // Debugging log
     setUserRole(role);  // Set the role (admin or user) after successful login
   };
 

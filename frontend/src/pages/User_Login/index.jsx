@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import ReCAPTCHA from 'react-google-recaptcha';
+// import ReCAPTCHA from 'react-google-recaptcha';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
 import './index.css'; // Import the CSS file
 
@@ -8,7 +8,7 @@ const Login = ({ onLogin }) => {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginMessage, setLoginMessage] = useState("");
-  const [recaptchaValue, setRecaptchaValue] = useState(null);
+  // const [recaptchaValue, setRecaptchaValue] = useState(null);
 
   const navigate = useNavigate(); // Initialize navigate
 
@@ -18,16 +18,16 @@ const Login = ({ onLogin }) => {
       return;
     }
 
-    if (!recaptchaValue) {
-      setLoginMessage("Please complete the reCAPTCHA.");
-      return;
-    }
+    // if (!recaptchaValue) {
+    //   setLoginMessage("Please complete the reCAPTCHA.");
+    //   return;
+    // }
 
     try {
-      const response = await axios.post('http://localhost:5003/api/user/login', {
+      const response = await axios.post('http://localhost:5004/api/user/login', {
         username: loginUsername,
         password: loginPassword,
-        recaptchaResponse: recaptchaValue,
+        // recaptchaResponse: recaptchaValue,
       });
 
       const { token } = response.data;
@@ -35,7 +35,9 @@ const Login = ({ onLogin }) => {
       if (token) {
         localStorage.setItem('authToken', token); // Store the token in localStorage
         setLoginMessage("Successfully Logged In");
-        onLogin(); // Update the login state in the parent component
+        console.log("Login successful."); // Debugging log
+
+        onLogin('user'); // Set role to 'user'
 
         // Log message to confirm successful login
         console.log("Login successful");
@@ -55,9 +57,9 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  const handleRecaptchaChange = (value) => {
-    setRecaptchaValue(value);
-  };
+  // const handleRecaptchaChange = (value) => {
+  //   setRecaptchaValue(value);
+  // };
 
   return (
     <div className="login-container">
@@ -83,12 +85,7 @@ const Login = ({ onLogin }) => {
             required
           />
         </div>
-        <div className="recaptcha-container">
-          <ReCAPTCHA
-            sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-            onChange={handleRecaptchaChange}
-          />
-        </div>
+      
         <button onClick={handleLogin} className="login-btn mt-2">Login</button>
         {loginMessage && (
           <p

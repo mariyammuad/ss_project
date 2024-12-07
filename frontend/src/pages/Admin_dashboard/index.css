@@ -1,39 +1,172 @@
+/* General Styles */
 .dashboard {
-    background: linear-gradient(135deg, #8e44ad, #d5b3f7);
-    border-radius: 8px;
-    padding: 20px;
+  background: linear-gradient(135deg, #8e44ad, #d5b3f7);
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  max-width: 1200px;
+  margin: 30px auto;
+}
+
+.dashboard h1 {
+  font-size: 2.5rem;
+  color: #512778!important;;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* Header Section */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.header button {
+  padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    background-color: #6c34a0;
+    border: none;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.header button:hover {
+  background-color: #5a2c86;
+  transform: translateY(-5px); /* Lift effect */
+}
+
+.header button:focus {
+  outline: none;
+}
+
+/* Card Styling */
+.card {
+  width: 80%; /* Decreased width */
+  max-width: 800px; /* Optional: Set a maximum width */
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  margin: 0 auto; /* Centers the card horizontally */
+}
+
+.card-body {
+  padding: 30px;
+}
+
+/* Table Styling */
+table {
+  margin-top: 30px;
+  border-collapse: collapse;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table th,
+table td {
+  padding: 15px;
+  text-align: center;
+}
+
+table th {
+  background-color: #6c34a0;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+table td {
+  font-size: 1rem;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+table tr:hover {
+  background-color: #e1f0ff;
+  cursor: pointer;
+}
+
+/* Loading Spinner */
+.spinner-border {
+  margin-top: 30px;
+}
+
+.text-center p {
+  margin-top: 15px;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #333;
+}
+
+/* No Logs Available */
+.no-logs {
+  font-size: 1.2rem;
+  color: #999;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .dashboard {
+    padding: 25px;
   }
-  
+
   .header h1 {
-    font-size: 2.5rem;
-    color: #343a40;
+    font-size: 2rem;
   }
-  
+
   .header button {
-    font-size: 1.2rem;
+    font-size: 1rem;
     padding: 10px 20px;
   }
-  
-  table {
-    margin-top: 20px;
-    border: 1px solid #ddd;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 20px;
   }
-  
-  table th, table td {
-    text-align: center;
+
+  .header h1 {
+    font-size: 1.8rem;
+  }
+
+  table th,
+  table td {
+    font-size: 0.9rem;
+    padding: 12px;
+  }
+
+  .header button {
+    font-size: 1rem;
+    padding: 8px 16px;
+  }
+}
+
+/* Additional Styling for Mobile View */
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 15px;
+  }
+
+  .header h1 {
+    font-size: 1.6rem;
+  }
+
+  table th,
+  table td {
+    font-size: 0.85rem;
     padding: 10px;
   }
-  
-  table th {
-    background-color: #007bff;
-    color: white;
+
+  .header button {
+    font-size: 0.9rem;
+    padding: 6px 12px;
   }
-  
-  table tr:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-  
-  table tr:hover {
-    background-color: #f1f1f1;
-  }
-  
+}
