@@ -163,10 +163,10 @@ app.post('/api/register', async (req, res) => {
   }
 
   try {
-    // const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
-    // if (!isRecaptchaValid) {
-    //   return res.status(400).json({ message: 'Invalid reCAPTCHA' });
-    // }
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaResponse);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({ message: 'Invalid reCAPTCHA' });
+    }
 
     const userExists = await mongoose.connection.collection('users').findOne({ email });
     if (userExists) {
