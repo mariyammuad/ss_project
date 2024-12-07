@@ -39,10 +39,10 @@ const Dashboard = () => {
 
     // Fetch logs if the token is valid
     axios
-      // .get('http://localhost:5004/api/user/logs', {
+      .get('https://ss-project-frontend.vercel.app/', {
         headers: {
           Authorization: `Bearer ${token}`,
-        }
+        },
       })
       .then((response) => {
         setLogs(response.data);
@@ -52,7 +52,7 @@ const Dashboard = () => {
         console.error(err);
         navigate('/admin-login');
       });
-  }, [navigate];
+  }, [navigate]);
 
   const handleLogout = () => {
     // Remove the token from localStorage when logging out
@@ -94,6 +94,6 @@ const Dashboard = () => {
       )}
     </div>
   );
-;
+};
 
 export default Dashboard;

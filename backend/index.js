@@ -26,13 +26,14 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Nodemailer setup for sending verification emails
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
-);
+});
 
 app.use(cors({
-  // origin: 'http://localhost:3000', // Adjust this if your React app is running on a different port
+  origin: 'https://ss-project-frontend.vercel.app/', // Adjust this if your React app is running on a different port
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));

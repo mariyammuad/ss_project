@@ -41,7 +41,7 @@ const Register = () => {
     }
 
     try {
-      // const response = await axios.post('http://localhost:5004/api/register', {
+      const response = await axios.post('https://ss-project-frontend.vercel.app/', {
         username,
         email,
         password,
