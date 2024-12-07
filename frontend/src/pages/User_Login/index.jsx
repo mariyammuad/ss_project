@@ -24,7 +24,7 @@ const Login = ({ onLogin }) => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5004/api/user/login', {
+      // const response = await axios.post('http://localhost:5004/api/user/login', {
         username: loginUsername,
         password: loginPassword,
         recaptchaResponse: recaptchaValue,

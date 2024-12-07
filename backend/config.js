@@ -31,7 +31,7 @@ const config = {
     emailVerificationExpireTime: parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_TIME, 10) || 3600, // Default 1 hour
     pepper: process.env.PEPPER || 'defaultPepper', // Fallback for development
     recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY || '',
-    clientUrl: process.env.CLIENT_URL || 'http://localhost:3000', // Default client URL
+    // clientUrl: process.env.CLIENT_URL || 'http://localhost:3000', // Default client URL
 };
 
 export default config;

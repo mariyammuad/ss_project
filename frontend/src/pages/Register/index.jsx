@@ -41,7 +41,7 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5004/api/register', {
+      // const response = await axios.post('http://localhost:5004/api/register', {
         username,
         email,
         password,
